@@ -21,13 +21,16 @@ def main():
     print(f'starting energy: {starting_energy}')
 
     # create an instance of the imputation algorithm
-    # try changing the weight parameters to achieve different results
-    # scaling of the imputed values can be turned on or off (defaults to on)
-    cpi = CopyPasteImputation(w_energy=5.0, w_season=10.0, w_weekday=1.0, scaling_active=True)
+    cpi = CopyPasteImputation()
+
+    # fit cpi's internal model to the data
+    ## cpi can actually figure out the values per day automatically; try removing the parameter
+    cpi.fit(ets=timeseries, values_per_day=vpd, starting_energy=starting_energy)
 
     # impute the missing values in the time series
-    ## cpi can actually figure out the values per day automatically; try removing the parameter
-    result = cpi.impute(ets=timeseries, values_per_day=vpd, starting_energy=starting_energy)
+    # try changing the weight parameters to achieve different results
+    # scaling of the imputed values can be turned on or off (defaults to on)
+    result = cpi.impute(w_energy=5.0, w_season=10.0, w_weekday=1.0, scaling_active=True)
 
     # plot the resulting energy time series with imputed values in blue
     plt.plot(result)

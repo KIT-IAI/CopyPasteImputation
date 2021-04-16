@@ -1,3 +1,6 @@
+import os.path
+
+from datetime import datetime, timedelta
 from dateutil import parser
 from fbprophet import Prophet
 import numpy as np
@@ -9,92 +12,118 @@ from .utils import calculate_values_per_day, energy_to_power
 class CopyPasteImputation():
     """An imputation method for energy time series."""
 
-    def __init__(self, w_weekday=1.0, w_season=10.0, w_energy=5.0,
-            scaling_active=True):
-        """Initialize an instance of CopyPasteImputation.
-
-        w_weekday -- Weight for the weekday distance.  
-        w_season -- Weight for the seasonal distance.  
-        w_energy -- Weight for the energy distance.  
-        scaling_active -- Activates scaling of imputed values to match the exact energy of each gap.
-        """
-        self.w_weekday = w_weekday
-        self.w_season = w_season
-        self.w_energy = w_energy
-        self.scaling_active = scaling_active
+    def __init__(self, log_runtime: bool = False, rt_log_file: str = 'cpi_runtime.csv'):
+        self.log_runtime = log_runtime
+        self.rt_log_file = rt_log_file
+        
+        self.data = None
         self.vpd = None
+        self.power = None
+        self.daily_masks = None
+        self.estimated_energy = None
+        self.available_days = None
 
-    def impute(self, ets: pd.DataFrame, values_per_day: int = None,
-            starting_energy: float = 0.0) -> pd.Series:
-        """Impute missing values in `ets` by copying and pasting fitting blocks into the gaps.
+    def fit(self, ets: pd.DataFrame, values_per_day: int = None,
+            starting_energy: float = 0.0):
+        if self.log_runtime: timestamps = [datetime.now()]
+        # linear interpolation of single missing values
+        self.data = self._linear_interpolation(ets)
+        
+        if self.log_runtime: timestamps.append(datetime.now())
 
-        ets -- The time series to impute. Must contain 2 columns: time, energy  
-        values_per_day -- The number of values per day in the time series.
-        """
-        data = self._linear_interpolation(ets)
-        time = data.iloc[:, 0]
-
+        # estimation of energy
+        time = self.data.iloc[:, 0]
         if values_per_day is None:
             self.vpd = calculate_values_per_day(time)
         else:
             self.vpd = values_per_day
 
-        energy = data.iloc[:, 1]
-        power = energy_to_power(energy, starting_energy)
+        energy = self.data.iloc[:, 1]
+        self.power = energy_to_power(energy, starting_energy)
 
-        energy_per_day = self._calc_energy_per_day(power)
-        daily_masks = self._calc_daily_masks(power)
+        energy_per_day = self._calc_energy_per_day(self.power)
+        self.daily_masks = self._calc_daily_masks(self.power)
 
         weekly_pattern = self._estimate_weekly_pattern(
-            time, energy_per_day, daily_masks)
-
-        available_days = self._compile_list_of_available_complete_days(
-            time, energy_per_day, daily_masks)
+            time, energy_per_day, self.daily_masks)
 
         missing_energy = self._estimate_missing_energy_per_day(
-            energy, power, weekly_pattern)
-        estimated_energy = energy_per_day + missing_energy
+            energy, self.power, weekly_pattern)
+        self.estimated_energy = energy_per_day + missing_energy
 
-        imputed_power = self._impute(
-            time, power, estimated_energy, daily_masks, available_days)
+        if self.log_runtime: timestamps.append(datetime.now())
+        
+        # compilation of list of available complete days
+        self.available_days = self._compile_list_of_available_complete_days(
+            time, energy_per_day, self.daily_masks)
 
-        if self.scaling_active:
-            imputed_power = self._scale_imputation(
-                imputed_power, power, energy)
+        if self.log_runtime: 
+            timestamps.append(datetime.now())
+            self._log_runtimes(timestamps)
+            
 
-        return self._calculate_imputed_energy(energy, imputed_power)
+    def impute(self, w_weekday=1.0, w_season=5.0, w_energy=10.0,
+            scaling_active=True) -> pd.Series:
+        """Impute missing values in `ets` by copying and pasting fitting blocks into the gaps."""
+        # calculation of dissimilarity between days
+        # & copy and paste of best matching days
+        imputed_power = self._impute_power(w_weekday, w_season, w_energy)
+        
+        if self.log_runtime: timestamps = [datetime.now()]
+        if scaling_active:
+            imputed_power = self._scale_imputation(imputed_power)
+        
+        if self.log_runtime: timestamps.append(datetime.now())
+        imputed_energy = self._calculate_imputed_energy(imputed_power)
 
-    def _impute(self, time, power, estimated_energy, daily_masks, available_days) -> pd.Series:
-        prediction = power.copy()
-        power_na = power.isna()
+        if self.log_runtime: 
+            timestamps.append(datetime.now())
+            self._log_runtimes(timestamps)
+        return imputed_energy
+
+    def _impute_power(self, w_weekday, w_season, w_energy) -> pd.Series:
+        time = self.data.iloc[:, 0]
+        prediction = self.power.copy()
+        power_na = self.power.isna()
 
         starting_date = parser.parse(time.iloc[0])
         starting_day = starting_date.timetuple().tm_yday
 
-        min_e, max_e = self._calc_min_max_energy(available_days)
-        distance = Distance(self.w_weekday, self.w_season,
-                            self.w_energy, min_e, max_e)
+        min_e, max_e = self._calc_min_max_energy(self.available_days)
+        distance = Distance(w_weekday, w_season, w_energy, min_e, max_e)
 
-        for i in range(daily_masks.shape[0]):
-            if daily_masks[i] == 0:
+        matching_duration = timedelta(seconds=0)
+        copy_paste_duration = timedelta(seconds=0)
 
+        for i in range(self.daily_masks.shape[0]):
+            if self.daily_masks[i] == 0:
+
+                mstart = datetime.now()
                 date = parser.parse(time.iloc[i * self.vpd])
                 this_day = (
                     date.weekday(),
                     date.timetuple().tm_yday,
-                    estimated_energy[i]
+                    self.estimated_energy[i]
                 )
-
                 best_day = self._find_best_day(
-                    distance, available_days, this_day)
+                    distance, self.available_days, this_day)
                 # index is day of year and starts with 1
                 index = best_day[1]
-                best_day_data = power.iloc[(
+                matching_duration += datetime.now() - mstart
+
+                cpstart = datetime.now()
+                best_day_data = self.power.iloc[(
                     index - starting_day)*self.vpd:(index - starting_day + 1)*self.vpd]
 
                 for j in range(self.vpd):
                     if power_na.iloc[i*self.vpd + j]:
                         prediction.iloc[i*self.vpd + j] = best_day_data.iloc[j]
+                copy_paste_duration += datetime.now() - cpstart
+
+        if self.log_runtime:
+            with open(self.rt_log_file, 'a') as log_file:
+                log_file.write(f',{matching_duration.total_seconds()},{copy_paste_duration.total_seconds()}')
+
         return prediction
 
     def _linear_interpolation(self, ets: pd.DataFrame) -> pd.DataFrame:
@@ -247,9 +276,10 @@ class CopyPasteImputation():
         min_index = np.argmin(distances)
         return available_days[min_index]
 
-    def _scale_imputation(self, imp_power, power, energy):
+    def _scale_imputation(self, imp_power):
+        energy = self.data.iloc[:, 1]
         scaled_power = imp_power.copy()
-        power_na = power.isna()
+        power_na = self.power.isna()
 
         start = -1
         for i in range(imp_power.shape[0]):
@@ -266,7 +296,8 @@ class CopyPasteImputation():
 
         return scaled_power
 
-    def _calculate_imputed_energy(self, energy, imputed_power):
+    def _calculate_imputed_energy(self, imputed_power):
+        energy = self.data.iloc[:, 1]
         imputed_energy = energy.copy()
         energy_na = energy.isna()
         for i in range(energy.shape[0]):
@@ -274,6 +305,12 @@ class CopyPasteImputation():
                 imputed_energy.iloc[i] = imputed_energy.iloc[i - 1] \
                     + imputed_power.iloc[i]
         return imputed_energy
+
+    def _log_runtimes(self, timestamps):
+        with open(self.rt_log_file, 'a') as log_file:
+            for i in range(1, len(timestamps)):
+                duration = timestamps[i] - timestamps[i - 1]
+                log_file.write(f',{duration.total_seconds()}')
 
 
 class Distance:

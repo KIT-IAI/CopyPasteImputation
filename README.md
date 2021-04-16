@@ -16,7 +16,8 @@ To install this project, perform the following steps:
 
     cpi = CopyPasteImputation()
     data = pd.read_csv('data.csv')
-    result = cpi.impute(data)
+    cpi.fit(data)
+    result = cpi.impute()
 
 ### Data Requirements
 

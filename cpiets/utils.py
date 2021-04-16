@@ -43,3 +43,28 @@ def energy_to_power(energy: pd.Series, starting_energy: float, time_factor: int 
             power.append(np.nan)
 
     return pd.Series(power)
+
+
+def sum_per_gap(values: np.array, masks: np.array):
+    result = []
+    start = -1
+    for i in range(values.shape[0]):
+        if masks[i] == 0:
+            if start < 0:
+                start = i
+        else:
+            if start > -1:
+                # end of gap
+                gap_sum = values[start:i].sum()
+                result.append(gap_sum)
+            start = -1
+
+    return result
+
+
+def mask_values(values: np.array, masks: np.array):
+    result = []
+    for i in range(masks.shape[0]):
+        if masks[i] == 0:
+            result.append(values[i])
+    return result

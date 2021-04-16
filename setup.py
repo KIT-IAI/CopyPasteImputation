@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="cpi-ets",
-    version="0.0.1",
+    version="0.0.2",
     author="Moritz Weber",
     author_email="moritz.weber@kit.edu",
     description="Copy-Paste Imputation for Energy Time Series",
