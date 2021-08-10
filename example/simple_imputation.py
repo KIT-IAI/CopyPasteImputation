@@ -1,3 +1,8 @@
+"""
+LGPL-3.0 License
+Copyright (c) 2021 KIT-IAI Moritz Weber
+"""
+
 import matplotlib.pyplot as plt
 import pandas as pd
 

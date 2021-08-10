@@ -1,3 +1,8 @@
+"""
+LGPL-3.0 License
+Copyright (c) 2021 KIT-IAI Moritz Weber
+"""
+
 from datetime import timedelta
 from dateutil import parser
 import numpy as np
@@ -16,8 +21,7 @@ def calculate_values_per_day(time: pd.Series) -> int:
 
 def estimate_starting_energy(energy: pd.Series, samples: int = 5) -> float:
     """Estimate the energy of a time series before the first value.  
-    This is necessary to compute the complete power time series.
-    """
+    This is necessary to compute the complete power time series."""
     avg_difference = 0.0
     samples = min(samples, energy.shape[0])
 

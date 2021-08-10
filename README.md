@@ -1,4 +1,7 @@
-# Copy-Paste Imputation for Energy Time Series
+# Copy-Paste Imputation (CPI) for Energy Time Series
+
+This repository contains the Python implementation of the Copy-Paste Imputation (CPI) method presented in the following paper:
+>M. Weber, M. Turowski, H. K. Çakmak, R. Mikut, U. Kühnapfel and V. Hagenmeyer, "Data-Driven Copy-Paste Imputation for Energy Time Series," in IEEE Transactions on Smart Grid, doi: [10.1109/TSG.2021.3101831](https://doi.org/10.1109/TSG.2021.3101831).
 
 ## Installation
 
@@ -9,7 +12,7 @@ To install this project, perform the following steps:
 4. `pip install .` or `pip install -e .` to install the project editable.
     * Use `pip install -e .[dev]` to install with development dependencies
 
-## Usage
+## Use
 
     from cpiets.cpi import CopyPasteImputation
     import pandas as pd
@@ -19,7 +22,7 @@ To install this project, perform the following steps:
     cpi.fit(data)
     result = cpi.impute()
 
-### Data Requirements
+### Input Data Requirements
 
 **Example data:**
 
@@ -39,10 +42,15 @@ The names of the columns are arbitrary.
 
 ## Example
 
-To try CPI with simple test data, you can run the example
+In this repository, we included example data derived from the [ElectricityLoadDiagrams20112014](https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014) data set.
+
+To run the CPI method with simple test data, you can run the example
 
     python example/simple_imputation.py
 
 and play around with the parameters.
 
-The included data is derived from the [ElectricityLoadDiagrams20112014](https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014) data set.
+
+## License
+
+This code is licensed under the [LGPL-3.0 License](COPYING).

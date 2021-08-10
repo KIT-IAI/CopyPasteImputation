@@ -1,3 +1,8 @@
+"""
+LGPL-3.0 License
+Copyright (c) 2021 KIT-IAI Moritz Weber
+"""
+
 from datetime import datetime
 from multiprocessing import Pool
 from typing import Dict, List
