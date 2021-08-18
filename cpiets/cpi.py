@@ -7,7 +7,7 @@ import os.path
 
 from datetime import datetime, timedelta
 from dateutil import parser
-from fbprophet import Prophet
+from prophet import Prophet
 import numpy as np
 import pandas as pd
 
@@ -72,6 +72,8 @@ class CopyPasteImputation():
         """Impute missing values in `ets` by copying and pasting fitting blocks into the gaps."""
         # calculation of dissimilarity between days
         # & copy and paste of best matching days
+        if len(self.available_days) == 0:
+            return self.data.iloc[:, 1]
         imputed_power = self._impute_power(w_weekday, w_season, w_energy)
         
         if self.log_runtime: timestamps = [datetime.now()]
@@ -248,14 +250,16 @@ class CopyPasteImputation():
 
         prophet_model = Prophet(weekly_seasonality=True,
                                 yearly_seasonality=True)
-        prophet_model.fit(daily_data)
+        if daily_data.count()['y'] > 1:
+            prophet_model.fit(daily_data)
 
-        # `future` starts with the first day of the time series.
-        # This allows us to select the corresponding pattern value
-        # for day `i` by accessing `weekly[i % 7]`.
-        future = prophet_model.make_future_dataframe(periods=0)
-        forecast = prophet_model.predict(future)
-        return forecast.get('weekly').head(7)
+            # `future` starts with the first day of the time series.
+            # This allows us to select the corresponding pattern value
+            # for day `i` by accessing `weekly[i % 7]`.
+            future = prophet_model.make_future_dataframe(periods=0)
+            forecast = prophet_model.predict(future)
+            return forecast.get('weekly').head(7)
+        return pd.Series(np.zeros(7))
 
     def _compile_list_of_available_complete_days(self, time, daily_consumption, daily_masks):
         available_days = []
@@ -295,8 +299,9 @@ class CopyPasteImputation():
                 if start > -1:  # end of gap
                     energy_gt = energy.iloc[i - 1] - energy.iloc[start - 1]
                     energy_imp = imp_power.iloc[start:i].sum()
-                    factor = energy_gt / energy_imp
-                    scaled_power.iloc[start:i] = imp_power.iloc[start:i] * factor
+                    if energy_imp != 0:
+                        factor = energy_gt / energy_imp
+                        scaled_power.iloc[start:i] = imp_power.iloc[start:i] * factor
                 start = -1
 
         return scaled_power

@@ -17,7 +17,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
     ],
     python_requires='>=3.6',
-    install_requires=['numpy', 'pandas', 'fbprophet'],
+    install_requires=['numpy', 'pandas', 'prophet'],
     extras_require={
         'dev': [
             'pylint',

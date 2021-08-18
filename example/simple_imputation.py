@@ -3,12 +3,15 @@ LGPL-3.0 License
 Copyright (c) 2021 KIT-IAI Moritz Weber
 """
 
+import pathlib
+
 import matplotlib.pyplot as plt
 import pandas as pd
 
 from cpiets.cpi import CopyPasteImputation
 from cpiets.utils import energy_to_power, estimate_starting_energy
 
+PATH = pathlib.Path(__file__).parent.resolve()
 
 def main():
     # set values per day (96 = one value every 15 minutes)
@@ -19,7 +22,7 @@ def main():
     # office_96_feb: same time series, but starting in February
     # office_96+500: same time series, but with a constant 500 kWh added
     # office_96_complete: no missing values
-    timeseries = pd.read_csv('example/data/office_96.csv')
+    timeseries = pd.read_csv(PATH / 'data/office_96.csv')
 
     # starting energy is required to calculate a complete power time series
     starting_energy = estimate_starting_energy(timeseries.iloc[:, 1])
