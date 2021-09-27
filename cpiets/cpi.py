@@ -208,6 +208,11 @@ class CopyPasteImputation():
                     sum_of_added_energy = 0
                     gap_start = -1
 
+        if gap_start != -1:  # last day has missing values -> gap not closed
+            gap_end = missing_energy.shape[0] - 1
+            missing_energy = self._compensate_energy_of_missing_days(
+                missing_energy, sum_of_added_energy * -1, gap_start, gap_end)
+
         return missing_energy
 
     def _compensate_energy_of_missing_days(self,
