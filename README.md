@@ -35,6 +35,11 @@ To install this project, perform the following steps:
 
 The names of the columns are arbitrary.
 
+**Assumptions:**
+* There are no missing values (nan) at the start or end of the time series.
+* A day starts with the first value after 0:00 (0:15 in the example above) and ends with 0:00.
+* The time series starts at the beginning of a day and ends at the end of a day.
+
 **Supported time formats:**
 * %Y-%m-%d %H:%M:%S (2020-01-17 13:37:42)
 * %d-%b-%Y %H:%M:%S (17-Jan-2020 13:37:42)
