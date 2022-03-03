@@ -1,7 +1,7 @@
 # Copy-Paste Imputation (CPI) for Energy Time Series
 
 This repository contains the Python implementation of the Copy-Paste Imputation (CPI) method presented in the following paper:
->M. Weber, M. Turowski, H. K. Çakmak, R. Mikut, U. Kühnapfel and V. Hagenmeyer, "Data-Driven Copy-Paste Imputation for Energy Time Series," in IEEE Transactions on Smart Grid, doi: [10.1109/TSG.2021.3101831](https://doi.org/10.1109/TSG.2021.3101831).
+>M. Weber, M. Turowski, H. K. Çakmak, R. Mikut, U. Kühnapfel and V. Hagenmeyer, 2021, "Data-Driven Copy-Paste Imputation for Energy Time Series," in IEEE Transactions on Smart Grid, 12, 6, pp. 5409–5419, doi: [10.1109/TSG.2021.3101831](https://doi.org/10.1109/TSG.2021.3101831).
 
 ## Installation
 
