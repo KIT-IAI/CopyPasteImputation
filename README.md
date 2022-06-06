@@ -56,6 +56,11 @@ To run the CPI method with simple test data, you can run the example
 and play around with the parameters.
 
 
+## Funding
+
+This project is supported by the Helmholtz Association under the Joint Initiative "Energy System 2050 - A Contribution of the Research Field Energy".
+
+
 ## License
 
 This code is licensed under the [LGPL-3.0 License](COPYING).
