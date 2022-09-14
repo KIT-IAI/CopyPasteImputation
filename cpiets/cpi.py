@@ -93,9 +93,6 @@ class CopyPasteImputation():
         prediction = self.power.copy()
         power_na = self.power.isna()
 
-        starting_date = parser.parse(time.iloc[0])
-        starting_day = starting_date.timetuple().tm_yday
-
         min_e, max_e = self._calc_min_max_energy(self.available_days)
         distance = Distance(w_weekday, w_season, w_energy, min_e, max_e)
 
@@ -115,12 +112,11 @@ class CopyPasteImputation():
                 best_day = self._find_best_day(
                     distance, self.available_days, this_day)
                 # index is day of year and starts with 1
-                index = best_day[1]
+                index = best_day[3]
                 matching_duration += datetime.now() - mstart
 
                 cpstart = datetime.now()
-                best_day_data = self.power.iloc[(
-                    index - starting_day)*self.vpd:(index - starting_day + 1)*self.vpd]
+                best_day_data = self.power.iloc[index * self.vpd:(index + 1) * self.vpd]
 
                 for j in range(self.vpd):
                     if power_na.iloc[i*self.vpd + j]:
@@ -274,7 +270,8 @@ class CopyPasteImputation():
                 available_days.append((
                     date.weekday(),
                     date.timetuple().tm_yday,
-                    daily_consumption[i]
+                    daily_consumption[i],
+                    i
                 ))
         return available_days
 
